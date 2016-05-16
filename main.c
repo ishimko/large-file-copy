@@ -1,18 +1,10 @@
-#include <stdio.h>
 #include <libgen.h>
 #include <stdlib.h>
+#include "error_printer.h"
 
 #define ARGS_COUNT 4
 
 char *MODULE_NAME;
-
-void print_error(const char *module_name, const char *error_msg, const char *additional_info) {
-    fprintf(stderr, "%s: %s", module_name, error_msg);
-    if (additional_info){
-        fprintf(stderr, ": %s", additional_info);
-    }
-    fputs("\n", stderr);
-}
 
 int main(int argc, char *argv[]) {
     MODULE_NAME = basename(argv[0]);
