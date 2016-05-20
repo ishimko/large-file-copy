@@ -9,6 +9,7 @@
 #include <sys/sem.h>
 #include <stdio.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include "error_printer.h"
 
 #define ARGS_COUNT 4
@@ -75,7 +76,7 @@ static void copy_part(const char *src_path, int dest, int sem_id, off_t start_of
         }
 
         if (!error) {
-            size_t bytes_remain = (size_t )part_size % BUFFER_SIZE;
+            size_t bytes_remain = (size_t) part_size % BUFFER_SIZE;
             if (read(src, buffer, bytes_remain) == -1) {
                 print_error(MODULE_NAME, strerror(errno), src_path);
                 error = -1;
@@ -125,6 +126,7 @@ static int copy_file(const char *src_path, const char *dest_path, int processes_
     int dest;
     int sem_id;
     ssize_t full_size;
+    struct stat file_info;
 
     if ((sem_id = semget(IPC_PRIVATE, 1, IPC_CREAT | IPC_EXCL | 0666)) == -1) {
         print_error(MODULE_NAME, strerror(errno), "semaphore creating");
@@ -136,7 +138,12 @@ static int copy_file(const char *src_path, const char *dest_path, int processes_
         return -1;
     }
 
-    if ((dest = open(dest_path, O_WRONLY | O_CREAT | O_EXCL)) == -1) {
+    if (stat(src_path, &file_info) == -1){
+        print_error(MODULE_NAME, strerror(errno), src_path);
+        return -1;
+    }
+
+    if ((dest = open(dest_path, O_WRONLY | O_CREAT | O_EXCL, file_info.st_mode)) == -1) {
         print_error(MODULE_NAME, strerror(errno), dest_path);
         return -1;
     }
