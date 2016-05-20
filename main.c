@@ -4,12 +4,11 @@
 #include <memory.h>
 #include <errno.h>
 #include <unistd.h>
-#include <limits.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
-#include <stdio.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <limits.h>
 #include "error_printer.h"
 
 #define ARGS_COUNT 4
@@ -96,32 +95,6 @@ static void copy_part(const char *src_path, int dest, int sem_id, off_t start_of
     }
 }
 
-static ssize_t get_file_size(const char *path) {
-    FILE *f = fopen(path, "r");
-    ssize_t size;
-
-    if (!f) {
-        print_error(MODULE_NAME, strerror(errno), path);
-        return -1;
-    }
-
-    if (fseek(f, 0, SEEK_END) == -1) {
-        print_error(MODULE_NAME, strerror(errno), path);
-        return -1;
-    }
-
-    if ((size = ftell(f)) == -1) {
-        print_error(MODULE_NAME, strerror(errno), path);
-        return -1;
-    }
-
-    if (fclose(f) == -1) {
-        print_error(MODULE_NAME, strerror(errno), path);
-    }
-
-    return size;
-}
-
 static int copy_file(const char *src_path, const char *dest_path, int processes_count) {
     int dest;
     int sem_id;
@@ -148,11 +121,7 @@ static int copy_file(const char *src_path, const char *dest_path, int processes_
         return -1;
     }
 
-    if ((full_size = get_file_size(src_path)) == -1) {
-        print_error(MODULE_NAME, strerror(errno), src_path);
-        return -1;
-    }
-
+    full_size = file_info.st_size;
     ssize_t part_size = full_size / processes_count;
 
     off_t start_offset = 0;
