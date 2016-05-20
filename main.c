@@ -15,7 +15,6 @@
 #define BUFFER_SIZE 4096
 
 char *MODULE_NAME;
-char SRC_PATH[PATH_MAX];
 char DEST_PATH[PATH_MAX];
 
 struct sembuf LOCK = {.sem_op = -1};
@@ -91,7 +90,7 @@ static void copy_part(const char *src_path, int dest, int sem_id, off_t start_of
     }
 
     if (close(src) == -1) {
-        print_error(MODULE_NAME, strerror(errno), SRC_PATH);
+        print_error(MODULE_NAME, strerror(errno), src_path);
     }
 }
 
@@ -150,6 +149,7 @@ static int copy_file(const char *src_path, const char *dest_path, int processes_
 
 int main(int argc, char *argv[]) {
     MODULE_NAME = basename(argv[0]);
+    char SRC_PATH[PATH_MAX];
 
     if (argc != ARGS_COUNT) {
         print_error(MODULE_NAME, "Wrong number of parameters", NULL);
