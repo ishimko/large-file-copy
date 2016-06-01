@@ -20,10 +20,14 @@ char DEST_PATH[PATH_MAX];
 struct sembuf LOCK = {.sem_op = -1};
 struct sembuf UNLOCK = {.sem_op = 1};
 
-static int safe_write(int dest, const char *buffer, off_t start_offset, size_t size, int sem_id) {
+static int semaphore_operation(int sem_id, struct sembuf *semaphore_operation) {
     int semop_result = 0;
-    while ((semop_result = semop(sem_id, &LOCK, 1)) && ( errno == EINTR ));
-    if (semop_result == -1) {
+    while (((semop_result = semop(sem_id, semaphore_operation, 1)) == -1) && (errno == EINTR));
+    return semop_result;
+}
+
+static int safe_write(int dest, const char *buffer, off_t start_offset, size_t size, int sem_id) {
+    if (semaphore_operation(sem_id, &LOCK) == -1) {
         print_error(MODULE_NAME, strerror(errno), "locking semaphore");
         return -1;
     }
@@ -38,7 +42,7 @@ static int safe_write(int dest, const char *buffer, off_t start_offset, size_t s
         return -1;
     }
 
-    if (semop(sem_id, &UNLOCK, 1) == -1) {
+    if (semaphore_operation(sem_id, &UNLOCK) == -1) {
         print_error(MODULE_NAME, strerror(errno), "unlocking semaphore");
         return -1;
     }
@@ -112,7 +116,7 @@ static int copy_file(const char *src_path, const char *dest_path, int processes_
         return -1;
     }
 
-    if (stat(src_path, &file_info) == -1){
+    if (stat(src_path, &file_info) == -1) {
         print_error(MODULE_NAME, strerror(errno), src_path);
         return -1;
     }
