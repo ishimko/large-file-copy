@@ -21,7 +21,9 @@ struct sembuf LOCK = {.sem_op = -1};
 struct sembuf UNLOCK = {.sem_op = 1};
 
 static int safe_write(int dest, const char *buffer, off_t start_offset, size_t size, int sem_id) {
-    if (semop(sem_id, &LOCK, 1) == -1) {
+    int semop_result = 0;
+    while ((semop_result = semop(sem_id, &LOCK, 1)) && ( errno == EINTR ));
+    if (semop_result == -1) {
         print_error(MODULE_NAME, strerror(errno), "locking semaphore");
         return -1;
     }
